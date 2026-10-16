@@ -50,16 +50,27 @@ Lycka till, och fråga hellre en gång för mycket.
 
 3. Öppna fliken **Actions** och titta på den första körningen. Börja med ärende F1.
 
-## Så kör man det lokalt
+## Så kör man det lokalt med uv
 
-```bash
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
-pytest                          # testerna
-python -m churn.model           # tränar, skriver outputs/modell.joblib och outputs/matvarden.json
-python -m churn.evaluate        # kvalitetsgrind: felkod om ROC AUC är under tröskeln
-python -m churn.score           # skriver outputs/ringlista.csv
+### Installera dependencies
 ```
+uv sync --frozen --extra dev 
+```
+
+### Kör den kompletta ML pipelinen
+```bash
+# Tests
+uv run --frozen --no-sync python -m pytest -v 
+# Datavalidering
+uv run --frozen --no-sync python -m kontroller.validate_data data/kundbas.csv
+# Tränar, skriver outputs/modell.joblib och outputs/matvarden.json
+uv run --frozen --no-sync python -m churn.model
+# Kvalitetsgrind: felkod om ROC AUC är under tröskeln
+uv run --frozen --no-sync python -m churn.evaluate
+# Skriver outputs/ringlista.csv
+uv run --frozen --no-sync python -m churn.score
+```
+
 
 ## Vad som finns här
 
