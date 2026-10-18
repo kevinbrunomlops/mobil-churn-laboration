@@ -1,6 +1,6 @@
 
 name: Setup Python Environment
-description: Install Python and project dependencies with pip caching
+description: Install Python and project dependencies using uv
 
 inputs:
   python-version:
@@ -15,9 +15,12 @@ runs:
       uses: actions/setup-python@v6
       with:
         python-version: ${{ inputs.python-version }}
-        cache: pip
-        cache-dependency-path: pyproject.toml
+        
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
 
     - name: Install dependencies
       shell: bash
-      run: pip install -e ".[dev]"
+      run: uv sync --frozen --extra dev --python "${{ inputs.python-version }}"
