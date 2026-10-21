@@ -196,7 +196,10 @@ jobs:
         run: docker build -t churn-docker:ci .
 
       - name: Run Docker smoke-test
-        run: bash scripts/smoke_test.sh churn-docker:ci
+        run: |
+          bash scripts/smoke_test.sh churn-docker:ci
+          echo "Simulating Docker CI failure"
+          exit 1
 
   ringlista:
     name: Generate call list
