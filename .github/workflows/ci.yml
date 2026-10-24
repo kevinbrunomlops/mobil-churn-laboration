@@ -177,10 +177,15 @@ jobs:
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           fi
 
+  
   docker:
     name: Build and smoke-test Docker image
     needs: utvardera
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
@@ -192,11 +197,70 @@ jobs:
           name: modell-${{ github.sha }}
           path: outputs/
 
+      - name: Verify model commit
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          metadata = json.loads(
+              Path("outputs/matvarden.json").read_text()
+          )
+          actual = metadata["commit"]
+          expected = os.environ["EXPECTED_SHA"]
+
+          if actual != expected:
+              raise SystemExit(
+                  f"Model commit mismatch: {actual} != {expected}"
+              )
+
+          print("PASS: Model commit matches workflow commit")
+          PY
+
       - name: Build Docker image
         run: docker build -t churn-docker:ci .
 
       - name: Run Docker smoke-test
         run: bash scripts/smoke_test.sh churn-docker:ci
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag and publish approved image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          IMAGE="ghcr.io/${REPOSITORY,,}"
+          TAG="$IMAGE:$COMMIT_SHA"
+
+          docker tag churn-docker:ci "$TAG"
+          docker push "$TAG"
+
+          echo "Published: $TAG"
+
+      - name: Pull and verify published image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          IMAGE="ghcr.io/${REPOSITORY,,}:$COMMIT_SHA"
+
+          docker image rm "$IMAGE"
+          docker pull "$IMAGE"
+          bash scripts/smoke_test.sh "$IMAGE"
+
+          echo "PASS: Published image pulled and verified"
 
   ringlista:
     name: Generate call list
