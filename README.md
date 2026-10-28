@@ -54,8 +54,11 @@ Lycka till, och fråga hellre en gång för mycket.
 
 ### Installera dependencies
 ```
-uv sync --frozen --extra dev 
+uv sync --frozen --extra dev --extra training
 ```
+MLflow och Pandera installeras med `--extra training` för träning,
+validering och tester. Docker-imagen för ringlistan använder bara
+grundberoendena och innehåller därför inte dessa paket.
 
 ### Kör den kompletta ML pipelinen
 ```bash
@@ -117,10 +120,10 @@ I CI sparas resultaten i ett artifact som heter `mlflow-<commit SHA>`.
 Kör från projektets huvudmapp:
 
 ```bash
-uv sync --locked --extra dev
-uv run --locked python -m churn.model
+uv sync --locked --extra dev --extra training
+uv run --locked --extra training python -m churn.model
 uv run --locked python -m churn.evaluate
-uv run --locked mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5001
+uv run --locked --extra training mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5001
 ```
 
 Öppna http://127.0.0.1:5001 och välj `mobil-churn` under
@@ -140,7 +143,7 @@ Använd en ny, tom mapp och kör:
 mkdir -p outputs/mlflow-ci
 tar -xzf outputs/mlflow-tracking.tar.gz -C outputs/mlflow-ci
 uv run --locked python scripts/restore_mlflow.py outputs/mlflow-ci
-uv run --locked mlflow ui --backend-store-uri sqlite:///outputs/mlflow-ci/mlflow.db --port 5001
+uv run --locked --extra training mlflow ui --backend-store-uri sqlite:///outputs/mlflow-ci/mlflow.db --port 5001
 ```
 
 Stoppa ett eventuellt öppet MLflow-gränssnitt innan du startar ett nytt
