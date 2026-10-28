@@ -233,8 +233,17 @@ jobs:
           print("PASS: Model commit matches workflow commit")
           PY
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
       - name: Build Docker image
-        run: docker build -t churn-docker:ci .
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: churn-docker:ci
+          cache-from: type=gha,scope=churn-runtime
+          cache-to: type=gha,scope=churn-runtime,mode=max
 
       - name: Run Docker smoke-test
         run: bash scripts/smoke_test.sh churn-docker:ci

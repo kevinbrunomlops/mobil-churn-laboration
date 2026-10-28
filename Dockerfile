@@ -11,8 +11,13 @@ RUN pip install --no-cache-dir uv
 ENV PYTHONPATH=/app/src
 
 COPY pyproject.toml uv.lock ./
+
+# Keep dependency installation cached when only application code changes.
+RUN uv sync --locked --no-dev --no-install-project
+
 COPY src/ ./src/
 
+# Install the application after its dependencies.
 RUN uv sync --locked --no-dev --no-editable
 
 ENV PATH="/app/.venv/bin:$PATH"
