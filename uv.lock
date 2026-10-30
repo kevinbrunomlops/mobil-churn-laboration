@@ -527,9 +527,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "joblib" },
-    { name = "mlflow" },
     { name = "pandas" },
-    { name = "pandera", extra = ["pandas"] },
     { name = "scikit-learn" },
 ]
 
@@ -542,20 +540,24 @@ dev = [
     { name = "pytest-cov" },
     { name = "ruff" },
 ]
+training = [
+    { name = "mlflow" },
+    { name = "pandera", extra = ["pandas"] },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "joblib", specifier = ">=1.4" },
-    { name = "mlflow", specifier = ">=3.17.2" },
+    { name = "mlflow", marker = "extra == 'training'", specifier = ">=3.17.2" },
     { name = "pandas", specifier = ">=2.2" },
     { name = "pandera", marker = "extra == 'data'", specifier = ">=0.24" },
-    { name = "pandera", extras = ["pandas"], specifier = ">=0.34.1" },
+    { name = "pandera", extras = ["pandas"], marker = "extra == 'training'", specifier = ">=0.34.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.16" },
     { name = "scikit-learn", specifier = ">=1.5" },
 ]
-provides-extras = ["dev", "data"]
+provides-extras = ["dev", "data", "training"]
 
 [[package]]
 name = "click"
