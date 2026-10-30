@@ -16,6 +16,7 @@ import csv
 import math
 import subprocess
 from pathlib import Path
+from churn.data import MAL, las_data
 
 output = Path("outputs/ringlista.csv")
 output.unlink(missing_ok=True)
@@ -40,6 +41,22 @@ ids = [row["kund_id"] for row in rows]
 assert all(ids), "Tomma kund-ID hittades"
 assert len(ids) == len(set(ids)), \
     "Dubbla kund-ID hittades"
+# Check that listed customers exist in the source data.
+customers = las_data()
+known_ids = set(customers["kund_id"].astype(str))
+listed_ids = set(ids)
+
+unknown_ids = listed_ids - known_ids
+assert not unknown_ids, \
+    f"Unknown customer IDs in call list: {sorted(unknown_ids)}"
+
+# Only customers with an active subscription may appear.
+active_customers = customers[customers[MAL] == 0]
+active_ids = set(active_customers["kund_id"].astype(str))
+
+inactive_ids = listed_ids - active_ids
+assert not inactive_ids, \
+    f"Customers with ended subscriptions in call list: {sorted(inactive_ids)}"
 
 risker = [float(row["risk"]) for row in rows]
 
@@ -51,7 +68,7 @@ assert all(
 assert risker == sorted(risker, reverse=True), \
     "Ringlistan är inte sorterad efter risk"
 
-print("PASS: 100 giltiga kunder i ringlistan")
+print("PASS: 100 valid customers with active subscriptions")
 '
 
 echo "[2/2] Testing missing model handling..."
